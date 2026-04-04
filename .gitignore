@@ -1,0 +1,42 @@
+# Maven
+target/
+*.class
+*.jar
+*.war
+pom.xml.tag
+pom.xml.releaseBackup
+release.properties
+dependency-reduced-pom.xml
+.flattened-pom.xml
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*.sublime-project
+*.sublime-workspace
+.DS_Store
+*.iml
+
+# Build
+out/
+build/
+
+# Test Results
+test-results/
+*.log
+
+# Screenshots and Reports
+screenshots/
+surefire-reports/
+target/screenshots/
+
+# Environment
+.env
+.env.local
+*.properties.local
+
+.allure/
+allure-results/
+.github/
