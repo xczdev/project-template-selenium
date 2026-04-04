@@ -1,6 +1,6 @@
 # Selenium Test Automation Template
 
-A professional test automation framework built with Selenium WebDriver, JUnit, and Maven, following best practices including the Page Object Model (POM) pattern.
+A professional test automation framework built with Selenium WebDriver, TestNG, and Maven, following best practices including the Page Object Model (POM) pattern.
 
 ## Project Structure
 
@@ -11,17 +11,17 @@ src/
 │       └── com/automation/
 │           ├── pages/
 │           │   ├── BasePage.java          # Abstract base class for all page objects
-│           │   ├── LoginPage.java         # Example page object for login functionality
-│           │   └── HomePage.java          # Example page object for home page
+│           │   └── SearchPage.java        # Page object for DuckDuckGo search
 │           └── utils/
 │               ├── DriverFactory.java     # WebDriver initialization and management
+│               ├── ScreenshotUtil.java    # Screenshot capture utility
 │               └── TestConstants.java     # Test configuration and constants
 ├── test/
 │   └── java/
 │       └── com/automation/
 │           └── tests/
 │               ├── BaseTest.java          # Abstract base class with setup/teardown
-│               └── LoginTest.java         # Example test cases
+│               └── Test1.java             # Example test: DuckDuckGo search → lemonde.fr
 └── pom.xml                                # Maven project configuration
 ```
 
@@ -44,25 +44,30 @@ src/
 
 ### 3. **BaseTest** (`tests/BaseTest.java`)
 - Abstract base class for all test classes
-- **SETUP** (`@Before`): Initializes WebDriver, sets timeouts, navigates to base URL
-- **TEARDOWN** (`@After`): Closes WebDriver and cleans up resources
-- Provides common test utilities
+- **SETUP** (`@BeforeMethod`): Initializes WebDriver, sets timeouts, navigates to base URL
+- **TEARDOWN** (`@AfterMethod`): Closes WebDriver and cleans up resources
+- Provides `log()` helper that writes to Log4j and adds an Allure step simultaneously
 
-### 4. **Test Structure** (3-Part Pattern)
+### 4. **ScreenshotUtil** (`utils/ScreenshotUtil.java`)
+- Utility class for capturing browser screenshots
+- Saves screenshots to a configurable output directory
+
+### 5. **Test Structure** (3-Part Pattern)
 Each test follows the pattern: Setup → Run → Teardown
 
 ```java
 @Test
 public void testExampleScenario() {
     // SETUP: Prepare test data and page objects
-    LoginPage loginPage = new LoginPage(driver);
-    loginPage.verifyPageLoad();
+    SearchPage searchPage = new SearchPage(driver);
+    searchPage.verifyPageLoad();
     
     // RUN: Execute test actions
-    loginPage.login("username", "password");
+    searchPage.searchFor("example query");
     
     // VERIFY: Assert expected results
-    assertTrue("Expected condition", actualCondition);
+    assertTrue(driver.getCurrentUrl().contains("example"),
+               "Expected URL to contain 'example'");
     
     // TEARDOWN: Automatically handled by BaseTest.tearDown() method
 }
@@ -71,10 +76,12 @@ public void testExampleScenario() {
 ## Dependencies
 
 - **Selenium WebDriver**: Web automation library
-- **JUnit**: Unit testing framework
+- **TestNG**: Testing framework
 - **WebDriverManager**: Automatic WebDriver management
 - **Log4j**: Logging framework
 - **Jackson**: JSON processing
+- **Allure TestNG**: Test reporting (generates HTML reports with steps and history)
+- **Commons IO**: File I/O utilities (used by ScreenshotUtil)
 
 ## Getting Started
 
@@ -86,7 +93,7 @@ public void testExampleScenario() {
 
 1. **Clone or navigate to the project directory**
    ```bash
-   cd /path/to/tnra-selenium
+   cd /path/to/tnra-project
    ```
 
 2. **Update TestConstants if needed**
@@ -110,12 +117,12 @@ mvn clean test
 
 **Run specific test class**
 ```bash
-mvn clean test -Dtest=Test1
+mvn clean test -Dtest=<TestName>
 ```
 
 **Run specific test method**
 ```bash
-mvn clean test -Dtest=Test1#testGoogleSearchLemonde
+mvn clean test -Dtest=<TestName>#<TestStepName>
 ```
 
 **Run tests + open Allure report in browser automatically**
@@ -162,8 +169,8 @@ public class ProductPage extends BasePage {
 package com.automation.tests;
 
 import com.automation.pages.ProductPage;
-import org.junit.Test;
-import static org.junit.Assert.*;
+import org.testng.annotations.Test;
+import static org.testng.Assert.*;
 
 public class ProductPageTest extends BaseTest {
     
@@ -190,7 +197,7 @@ public class ProductPageTest extends BaseTest {
 2. **Locators**: Define as private static final constants
 3. **Methods**: Create business-logic methods in page objects (e.g., `login()`, not just `clickLoginButton()`)
 4. **Waits**: Always use explicit waits for elements (avoid Thread.sleep)
-5. **Assertions**: Use JUnit assertions for verification
+5. **Assertions**: Use TestNG assertions (`org.testng.Assert`) for verification
 6. **Logging**: Add meaningful log statements for debugging
 7. **Test Data**: Store in `TestConstants.java` for easy maintenance
 8. **Driver Management**: Always initialize in setUp() and close in tearDown()
@@ -222,9 +229,7 @@ options.addArguments("--window-size=1920,1080");
 ## Future Enhancements
 
 - Add Parallel Test Execution
-- Implement Screenshot Capture on Failure
-- Add Allure Reporting
-- Create TestNG XML Configuration
+- Create TestNG XML Suite Configuration (`testng.xml`)
 - Add Retry Mechanism for Flaky Tests
 - Implement Database Integration
 - Add API Testing Capabilities
@@ -232,7 +237,8 @@ options.addArguments("--window-size=1920,1080");
 ## References
 
 - [Selenium Documentation](https://www.selenium.dev/documentation/)
-- [JUnit 4 Documentation](https://junit.org/junit4/)
+- [TestNG Documentation](https://testng.org/doc/)
+- [Allure Framework](https://allurereport.org/docs/)
 - [Maven Documentation](https://maven.apache.org/guides/)
 - [WebDriverManager](https://github.com/bonigarcia/webdrivermanager)
 
