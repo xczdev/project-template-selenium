@@ -10,6 +10,7 @@ public class TestConstants {
     // Application URLs
     public static final String BASE_URL = "https://www.duckduckgo.com";
     public static final String LEMONDE_URL = "https://www.lemonde.fr";
+    public static final String LEFIGARO_URL = "https://www.lefigaro.fr";
     
     // Timeouts (in seconds)
     public static final int IMPLICIT_WAIT = 10;

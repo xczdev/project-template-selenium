@@ -110,20 +110,31 @@ public void testExampleScenario() {
 
 ### Running Tests
 
-**Run all tests**
+**Run all tests (default — no suite)**
 ```bash
 mvn clean test
 ```
 
-**Run specific test class**
+**Run a specific test class**
 ```bash
-mvn clean test -Dtest=<TestName>
+mvn clean test -Dtest=Test1
 ```
 
-**Run specific test method**
+**Run a specific test method**
 ```bash
-mvn clean test -Dtest=<TestName>#<TestStepName>
+mvn clean test -Dtest=Test1#myMethodName
 ```
+
+**Run a test suite**
+```bash
+mvn clean test -Dsuite=testSuite1
+```
+> This auto-activates the `suite` Maven profile and runs `src/test/resources/testSuite1.xml`.
+> To run a different suite, just change the name — no POM changes needed:
+> ```bash
+> mvn clean test -Dsuite=testSuite2
+> mvn clean test -Dsuite=smoke
+> ```
 
 **Run tests + open Allure report in browser automatically**
 ```bash
@@ -132,6 +143,80 @@ mvn clean test && mvn surefire-report:report -DskipTests allure:serve
 
 > `allure:serve` generates the report and opens it at `http://localhost:<port>` automatically.
 > Press **Ctrl+C** in the terminal to stop the report server when done.
+
+---
+
+## Test Suites
+
+Test suites are managed via TestNG XML files located in `src/test/resources/`.
+
+### How it works
+
+| Command | Behaviour |
+|---|---|
+| `mvn test` | Runs all tests matching `**/*Test.java` or `**/Test*.java` |
+| `mvn test -Dtest=Test1` | Runs only the `Test1` class |
+| `mvn test -Dsuite=testSuite1` | Runs the XML suite `src/test/resources/testSuite1.xml` |
+
+When `-Dsuite` is provided, the `suite` Maven profile activates automatically and hands full control to TestNG via the XML file. The `<includes>` pattern is ignored in that mode.
+
+### Creating a new suite
+
+1. Create a new XML file in `src/test/resources/`, e.g. `smoke.xml`:
+
+```xml
+<!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd">
+<suite name="Smoke Suite" verbose="1">
+    <test name="Smoke Tests">
+        <classes>
+            <class name="com.automation.tests.Test1"/>
+        </classes>
+    </test>
+</suite>
+```
+
+2. Run it:
+
+```bash
+mvn clean test -Dsuite=smoke
+```
+
+No POM changes required. Just drop the XML file and reference it by name.
+
+### Grouping tests with `@Test(groups=...)`
+
+You can filter tests within a suite using TestNG groups:
+
+```java
+@Test(groups = {"smoke", "regression"})
+public void Test1() { ... }
+
+@Test(groups = {"regression"})
+public void Test2() { ... }
+```
+
+Then target a group in your XML:
+
+```xml
+<suite name="Smoke Suite">
+    <test name="Smoke Tests">
+        <groups>
+            <run>
+                <include name="smoke"/>
+            </run>
+        </groups>
+        <packages>
+            <package name="com.automation.tests"/>
+        </packages>
+    </test>
+</suite>
+```
+
+Or directly from the command line (no XML needed):
+
+```bash
+mvn clean test -Dgroups=smoke
+```
 
 ## Adding New Tests
 

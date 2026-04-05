@@ -153,4 +153,30 @@
             </plugin>
         </plugins>
     </build>
+
+    <profiles>
+        <!-- Activated automatically when -Dsuite=xxx is passed -->
+        <profile>
+            <id>suite</id>
+            <activation>
+                <property>
+                    <name>suite</name>
+                </property>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <configuration>
+                            <suiteXmlFiles>
+                                <suiteXmlFile>src/test/resources/${suite}.xml</suiteXmlFile>
+                            </suiteXmlFiles>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
+
 </project>

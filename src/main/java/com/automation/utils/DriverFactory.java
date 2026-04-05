@@ -45,10 +45,15 @@ public class DriverFactory {
         options.addArguments("--ozone-platform=x11");
         options.addArguments("--disable-notifications");
         options.addArguments("--disable-dev-shm-usage");
+        // Use exact screen resolution instead of --start-maximized.
+        // On Wayland/KWin, maximize requests get overridden by the compositor.
+        // Setting a fixed window-size bypasses that entirely.
+        java.awt.Dimension screen = java.awt.Toolkit.getDefaultToolkit().getScreenSize();
+        options.addArguments("--window-position=0,0");
+        options.addArguments("--window-size=" + (int) screen.getWidth() + "," + (int) screen.getHeight());
         // Uncomment for headless mode
         // options.addArguments("--headless");
         WebDriver driver = new ChromeDriver(options);
-        driver.manage().window().maximize();
         return driver;
     }
 
