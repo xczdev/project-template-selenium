@@ -28,20 +28,32 @@ public abstract class BaseTest {
     }
 
     @BeforeMethod
-    public void setUp() {
+    public final void beforeEach() {
         driver = DriverFactory.initializeDriver(TestConstants.DEFAULT_BROWSER);
         driver.manage().timeouts().implicitlyWait(java.time.Duration.ofSeconds(TestConstants.IMPLICIT_WAIT));
         driver.manage().timeouts().pageLoadTimeout(java.time.Duration.ofSeconds(TestConstants.PAGE_LOAD_TIMEOUT));
         page = new BasePage(driver);
         driver.navigate().to(TestConstants.BASE_URL);
+        setup();
     }
 
     @AfterMethod
-    public void tearDown() {
+    public final void afterEach() {
+        teardown();
         if (driver != null) {
             DriverFactory.closeDriver();
         }
     }
+
+    /**
+     * Override in a test class to run custom logic after the base beforeEach (driver ready, page loaded).
+     */
+    protected void setup() {}
+
+    /**
+     * Override in a test class to run custom logic before the base afterEach (driver still open).
+     */
+    protected void teardown() {}
 
     // --- Action delegates (avoids writing page. in every test) -----------
 

@@ -7,6 +7,20 @@ import org.testng.annotations.Test;
 
 public class Test2 extends BaseTest {
 
+    @Override
+    protected void setup() {
+        // Custom setup before each test in this class
+        // e.g. log("Test2: setup - navigating to specific section");
+        log("Test2: setup actions");
+    }
+
+    @Override
+    protected void teardown() {
+        // Custom teardown after each test in this class
+        // e.g. log("Test2: teardown - resetting state");
+        log("Test2: teardown actions");
+    }
+
     @Test
     @Description("Search 'lefigaro' on DuckDuckGo and verify navigation to lefigaro.fr")
     public void searchForLefigaro() {
