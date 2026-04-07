@@ -1,87 +1,141 @@
-# Selenium Test Automation Template
+# Selenium Test Automation — Bot Style Tests
 
-A professional test automation framework built with Selenium WebDriver, TestNG, and Maven, following best practices including the Page Object Model (POM) pattern.
+A test automation framework built with **Selenium WebDriver**, **TestNG**, and **Maven**, designed around the **Bot Style Tests** pattern.
 
-## Project Structure
+## Design Philosophy: Bot Style Tests
 
-```
-src/
-├── main/
-│   └── java/
-│       └── com/automation/
-│           ├── pages/
-│           │   ├── BasePage.java          # Abstract base class for all page objects
-│           │   └── SearchPage.java        # Page object for DuckDuckGo search
-│           └── utils/
-│               ├── DriverFactory.java     # WebDriver initialization and management
-│               ├── ScreenshotUtil.java    # Screenshot capture utility
-│               └── TestConstants.java     # Test configuration and constants
-├── test/
-│   └── java/
-│       └── com/automation/
-│           └── tests/
-│               ├── BaseTest.java          # Abstract base class with setup/teardown
-│               └── Test1.java             # Example test: DuckDuckGo search → lemonde.fr
-└── pom.xml                                # Maven project configuration
-```
+This project follows the **Bot Style** approach to test automation, as described by Simon Stewart (creator of Selenium WebDriver).
 
-## Key Components
-
-### 1. **DriverFactory** (`utils/DriverFactory.java`)
-- Manages WebDriver lifecycle (initialization, close, reset)
-- Supports Chrome and Firefox browsers
-- Uses WebDriverManager for automatic driver management
-- Singleton pattern for driver instance
-
-### 2. **BasePage** (`pages/BasePage.java`)
-- Abstract base class for all page objects
-- Provides common methods for element interaction:
-  - `click()`, `type()`, `getText()`
-  - Explicit waits: `waitForElementVisible()`, `waitForElementClickable()`
-  - Dropdown handling: `selectFromDropdown()`
-- Implements Page Object Model pattern
-- Each page object must implement `verifyPageLoad()` method
-
-### 3. **BaseTest** (`tests/BaseTest.java`)
-- Abstract base class for all test classes
-- **SETUP** (`@BeforeMethod`): Initializes WebDriver, sets timeouts, navigates to base URL
-- **TEARDOWN** (`@AfterMethod`): Closes WebDriver and cleans up resources
-- Provides `log()` helper that writes to Log4j and adds an Allure step simultaneously
-
-### 4. **ScreenshotUtil** (`utils/ScreenshotUtil.java`)
-- Utility class for capturing browser screenshots
-- Saves screenshots to a configurable output directory
-
-### 5. **Test Structure** (3-Part Pattern)
-Each test follows the pattern: Setup → Run → Teardown
+The core idea: **tests read like a script of human actions**, where every line is either one action or one assertion — nothing more. There are no helper methods wrapping other methods, no page-level business logic, no multi-step flows hidden behind a single call.
 
 ```java
 @Test
-public void testExampleScenario() {
-    // SETUP: Prepare test data and page objects
-    SearchPage searchPage = new SearchPage(driver);
-    searchPage.verifyPageLoad();
-    
-    // RUN: Execute test actions
-    searchPage.searchFor("example query");
-    
-    // VERIFY: Assert expected results
-    assertTrue(driver.getCurrentUrl().contains("example"),
-               "Expected URL to contain 'example'");
-    
-    // TEARDOWN: Automatically handled by BaseTest.tearDown() method
+public void searchForLemonde() {
+    assertVisible(SearchPage.SEARCH_INPUT);
+    typeAndSubmit(SearchPage.SEARCH_INPUT, "lemonde");
+    assertVisible(SearchPage.FIRST_RESULT);
+    click(SearchPage.FIRST_RESULT);
+    assertUrlContains(TestConstants.LEMONDE_URL);
 }
 ```
 
+Each line answers: *"What does the user do next?"* or *"What should be true now?"*
+
+---
+
+## Architecture
+
+```
+src/
+└── test/
+    └── java/
+        └── com/automation/
+            ├── pages/
+            │   ├── BasePage.java          # All actions and assertions
+            │   └── SearchPage.java        # Locators only
+            ├── tests/
+            │   ├── BaseTest.java          # Setup, teardown, delegate methods
+            │   ├── Test1.java             # DuckDuckGo search → lemonde.fr
+            │   └── Test2.java             # DuckDuckGo search → lefigaro.fr
+            └── utils/
+                ├── DriverFactory.java     # WebDriver initialization and management
+                ├── ScreenshotUtil.java    # Screenshot capture utility
+                └── TestConstants.java     # URLs, timeouts, credentials
+```
+
+> Everything lives under `src/test/java` — this is a test-only project with no production code.
+
+---
+
+## Key Components
+
+### `BasePage` — the bot's action and assertion vocabulary
+
+`BasePage` is the single place that knows how to interact with the browser. It holds all reusable **actions** and **assertions**, backed by explicit waits.
+
+**Actions**
+
+| Method | Description |
+|---|---|
+| `click(locator)` | Wait for element to be clickable, then click |
+| `type(locator, text)` | Clear field and type text |
+| `typeAndSubmit(locator, text)` | Type text and press Enter |
+| `selectByText(locator, text)` | Select dropdown option by visible text |
+| `selectByValue(locator, value)` | Select dropdown option by value |
+| `getText(locator)` | Return visible text of element |
+| `getAttribute(locator, attr)` | Return attribute value of element |
+| `getCurrentUrl()` | Return current page URL |
+
+**Assertions** (all use `org.testng.Assert` internally)
+
+| Method | Description |
+|---|---|
+| `assertVisible(locator)` | Fails if element is not visible |
+| `assertNotVisible(locator)` | Fails if element is visible |
+| `assertIsSelected(locator)` | Fails if checkbox/radio is not selected |
+| `assertIsNotSelected(locator)` | Fails if checkbox/radio is selected |
+| `assertIsEnabled(locator)` | Fails if element is disabled |
+| `assertIsDisabled(locator)` | Fails if element is enabled |
+| `assertTextEquals(locator, text)` | Fails if element text does not exactly match |
+| `assertTextContains(locator, text)` | Fails if element text does not contain value |
+| `assertUrlContains(text)` | Fails if current URL does not contain value |
+
+---
+
+### `SearchPage` (and all other page objects) — locators only
+
+Page objects do **not** contain methods or logic. They are simple locator registries.
+
+```java
+public class SearchPage {
+    public static final By SEARCH_INPUT = By.name("q");
+    public static final By FIRST_RESULT  = By.cssSelector("[data-testid='result-title-a']");
+}
+```
+
+To add a new page, create a class with `public static final By` fields — nothing else.
+
+---
+
+### `BaseTest` — setup, teardown, and delegate methods
+
+`BaseTest` handles the WebDriver lifecycle and exposes all `BasePage` methods as direct calls (no `page.` prefix needed in tests).
+
+```java
+// BaseTest delegates — so tests call this directly:
+assertVisible(locator);        // → page.assertVisible(locator)
+click(locator);                // → page.click(locator)
+typeAndSubmit(locator, text);  // → page.typeAndSubmit(locator, text)
+```
+
+---
+
+### Tests — one line, one action or assertion
+
+```java
+@Test
+public void searchForLemonde() {
+    assertVisible(SearchPage.SEARCH_INPUT);          // assertion
+    typeAndSubmit(SearchPage.SEARCH_INPUT, "lemonde"); // action
+    assertVisible(SearchPage.FIRST_RESULT);           // assertion
+    click(SearchPage.FIRST_RESULT);                   // action
+    assertUrlContains(TestConstants.LEMONDE_URL);     // assertion
+}
+```
+
+No helper methods. No intermediate variables. No multi-step wrappers. The test **is** the script.
+
 ## Dependencies
 
-- **Selenium WebDriver**: Web automation library
-- **TestNG**: Testing framework
-- **WebDriverManager**: Automatic WebDriver management
-- **Log4j**: Logging framework
-- **Jackson**: JSON processing
-- **Allure TestNG**: Test reporting (generates HTML reports with steps and history)
-- **Commons IO**: File I/O utilities (used by ScreenshotUtil)
+- **Selenium WebDriver** — browser automation
+- **TestNG** — test framework and assertions (`org.testng.Assert`)
+- **WebDriverManager** — automatic browser driver management
+- **Log4j** — logging
+- **Allure TestNG** — HTML test reports
+- **Jackson** — JSON processing
+- **Commons IO** — file utilities
+
+---
 
 ## Getting Started
 
@@ -89,24 +143,12 @@ public void testExampleScenario() {
 - Java 11 or higher
 - Maven 3.6 or higher
 
-### Installation
+### Configuration
 
-1. **Clone or navigate to the project directory**
-   ```bash
-   cd /path/to/tnra-project
-   ```
-
-2. **Update TestConstants if needed**
-   Edit `src/main/java/com/automation/utils/TestConstants.java` to configure:
-   - `BASE_URL`: Application URL
-   - `IMPLICIT_WAIT`: Default wait time
-   - `EXPLICIT_WAIT`: WebDriver wait timeout
-   - Test credentials and data
-
-3. **Build the project**
-   ```bash
-   mvn clean install
-   ```
+Edit `src/test/java/com/automation/utils/TestConstants.java` to set:
+- `BASE_URL` — application entry point
+- `IMPLICIT_WAIT` / `EXPLICIT_WAIT` / `PAGE_LOAD_TIMEOUT` — timeouts in seconds
+- Test credentials and expected URLs
 
 ### Running Tests
 
