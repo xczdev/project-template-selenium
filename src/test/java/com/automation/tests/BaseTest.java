@@ -5,9 +5,13 @@ import com.automation.utils.TestConstants;
 import io.qameta.allure.Allure;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.openqa.selenium.By;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.support.ui.ExpectedConditions;
+import org.openqa.selenium.support.ui.WebDriverWait;
+import org.testng.Assert;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
-import org.openqa.selenium.WebDriver;
 
 /**
  * BaseTest - Abstract base class for all test classes
@@ -71,6 +75,21 @@ public abstract class BaseTest {
         }
         
         System.out.println("========== TEST TEARDOWN COMPLETED ==========");
+    }
+
+    /**
+     * Asserts that the element identified by the given locator is visible on the page.
+     * Waits up to IMPLICIT_WAIT seconds for the element to become visible.
+     */
+    protected void assertVisible(By locator) {
+        try {
+            new WebDriverWait(driver, java.time.Duration.ofSeconds(TestConstants.IMPLICIT_WAIT))
+                    .until(ExpectedConditions.visibilityOfElementLocated(locator));
+            Assert.assertTrue(driver.findElement(locator).isDisplayed(),
+                    "Element should be visible: " + locator);
+        } catch (Exception e) {
+            Assert.fail("Element is not visible: " + locator + " — " + e.getMessage());
+        }
     }
 
     /**
