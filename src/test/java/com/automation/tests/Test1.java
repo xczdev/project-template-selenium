@@ -1,6 +1,7 @@
 package com.automation.tests;
 
 import com.automation.pages.SearchPage;
+import com.automation.utils.BaseTest;
 import com.automation.utils.TestConstants;
 import io.qameta.allure.Description;
 import org.testng.annotations.Test;
